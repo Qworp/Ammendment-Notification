@@ -1,0 +1,109 @@
+Sub Ammendment_Macro()
+
+    Dim rng As Range
+    Dim OutApp As Object
+    Dim OutMail As Object
+    Dim email As String
+    
+    
+    
+    Dim dom As String
+    dom = "@canada.ca"
+    
+    
+    Dim cell As Range
+    Dim mString As String
+       
+    Dim strto As String
+    Dim opener As String
+    Dim strlen As Integer
+    Dim timeline As Integer
+    timeline = ThisWorkbook.Sheets("Sheet1").Range("F2").Value
+    opener = ThisWorkbook.Sheets("Sheet1").Range("H2").Text
+    
+    Dim header As String
+    'Changing the header of the table
+    header = "Name" & "                      |   " & "              " & "Expiry Date" & "        " & "   |   " & "     " & "PO Number" & "     " & "   |     " & "                                  " & "Vendor " & "                                   " & vbNewLine & "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+    
+    'Changing the body
+        Dim name As String
+        Dim celll As Range
+        Dim newmail As String
+        Dim strbody As String
+    For Each celll In ThisWorkbook.Sheets("Sheet1").Range("A:A")
+    
+        If (celll.Value < Date + timeline) And (celll.Value > Date) Then
+        
+            strbody = strbody & celll.Offset(0, 3).Text & "                        " & celll.Value & "                    " & celll.Offset(0, 1).Value & "               " & celll.Offset(0, 2).Value & vbNewLine
+           
+            name = Trim(Replace(celll.Offset(0, 3).Text, Chr(160), Chr(32)))
+            email = Replace(name, Chr(32), Chr(46)) & dom
+
+            If (strto <> email) And (strto <> "") Then
+                   'Next 3 lines delete the first string belonging to the next officer in the list
+                    mString = celll.Offset(0, 3).Text & "                        " & celll.Value & "                    " & celll.Offset(0, 1).Value & "               " & celll.Offset(0, 2).Value & vbNewLine
+                    strlen = Len(strbody) - Len(mString)
+                    'this line is the body of the email that will be sent to a single email of an officer
+                    newmail = Left(strbody, strlen)
+            
+            'Code till the end if sends email
+                    Set OutApp = CreateObject("Outlook.Application")
+                    Set OutMail = OutApp.CreateItem(0)
+
+                    On Error Resume Next
+                    With OutMail
+                    .To = strto
+                    .CC = ""
+                    .BCC = ""
+                    .Subject = "Ammendment Reminder"
+                    .Body = opener & vbNewLine & header & vbNewLine & newmail
+                    .send
+                    End With
+                    On Error GoTo 0
+
+                    With Application
+                    .EnableEvents = True
+                    .ScreenUpdating = True
+                    End With
+
+                    Set OutMail = Nothing
+                    Set OutApp = Nothing
+                    'Next line declares the strbody with the first line of the next officer in the list and appends their expiring contracts from there
+                strbody = celll.Offset(0, 3).Text & "                        " & celll.Value & "                    " & celll.Offset(0, 1).Value & "               " & celll.Offset(0, 2).Value & vbNewLine
+            End If
+            strto = email
+        End If
+    Next celll
+    
+'This is the code for sending the email. It is outside the for each loop to send the details to the last officer in the list. Without their info would not sent
+    With Application
+        .EnableEvents = False
+        .ScreenUpdating = False
+    End With
+
+    Set OutApp = CreateObject("Outlook.Application")
+    Set OutMail = OutApp.CreateItem(0)
+
+    On Error Resume Next
+   With OutMail
+        .To = strto
+        .CC = ""
+        .BCC = ""
+        .Subject = "Ammendment Reminder"
+        .Body = opener & vbNewLine & header & vbNewLine & strbody
+        .send
+    End With
+    On Error GoTo 0
+
+   With Application
+       .EnableEvents = True
+        .ScreenUpdating = True
+    End With
+
+    Set OutMail = Nothing
+    Set OutApp = Nothing
+End Sub
+
+
+
+
